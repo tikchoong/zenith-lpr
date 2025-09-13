@@ -1,0 +1,6 @@
+@LprWebhookApi_HostAddress = http://localhost:5174
+
+GET {{LprWebhookApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

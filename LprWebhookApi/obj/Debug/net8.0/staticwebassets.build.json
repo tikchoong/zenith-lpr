@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "iTPbedjFZbmlEitcX0nIBA7XdEJVkQjJJqEU2VUMJso=",
+  "Source": "LprWebhookApi",
+  "BasePath": "_content/LprWebhookApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
