@@ -50,6 +50,23 @@ public class Device
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // Whitelist Sync Properties
+    [Column("whitelist_start_sync")]
+    public bool WhitelistStartSync { get; set; } = false;
+
+    [Column("whitelist_sync_started_at")]
+    public DateTime? WhitelistSyncStartedAt { get; set; }
+
+    [Column("whitelist_sync_batches_sent")]
+    public int WhitelistSyncBatchesSent { get; set; } = 0;
+
+    [Column("whitelist_sync_total_batches")]
+    public int WhitelistSyncTotalBatches { get; set; } = 0;
+
+    [MaxLength(20)]
+    [Column("whitelist_sync_status")]
+    public string? WhitelistSyncStatus { get; set; } // "idle", "clearing", "adding", "completed", "failed"
+
     // Navigation properties
     [ForeignKey("SiteId")]
     public virtual Site Site { get; set; } = null!;

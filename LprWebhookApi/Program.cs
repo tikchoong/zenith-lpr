@@ -2,18 +2,31 @@ using Serilog;
 using Serilog.Formatting.Compact;
 using Microsoft.EntityFrameworkCore;
 using LprWebhookApi.Data;
+using LprWebhookApi.Services;
+using LprWebhookApi.Middleware;
+
 
 // Configure Serilog with both JSON and human-readable formats
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    // Console: wrap message in optional color tokens if present
+    .WriteTo.Console(outputTemplate: "{ColorStart}[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{ColorReset}{NewLine}{Exception}")
+    // Human rolling file
     .WriteTo.File("logs/lpr-webhook-human-.log",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 3,
+        retainedFileCountLimit: 7,
+        shared: true,
         outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    // Structured JSON rolling file
     .WriteTo.File(new CompactJsonFormatter(), "logs/lpr-webhook-json-.log",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 3)
+        retainedFileCountLimit: 7,
+        shared: true)
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +48,9 @@ builder.Host.UseSerilog();
 // Add Entity Framework with PostgreSQL
 builder.Services.AddDbContext<LprDbContext>(options =>
     options.UseNpgsql("Host=localhost;Database=lpr_webhook;Username=postgres;Password=postgres"));
+
+// Add services
+builder.Services.AddScoped<WhitelistSyncService>();
 
 // Add CORS services
 builder.Services.AddCors(options =>
@@ -67,18 +83,8 @@ if (app.Environment.IsDevelopment())
 // Enable CORS
 app.UseCors();
 
-// Add Serilog request logging
-app.UseSerilogRequestLogging(options =>
-{
-    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-    {
-        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
-        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-        diagnosticContext.Set("RemoteIP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown");
-        diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
-    };
-});
+// Custom request/response logging with markers and console colors
+app.UseRequestResponseLogging();
 
 // Configure MVC routing
 app.MapControllers();

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using LprWebhookApi.Data;
 using LprWebhookApi.Models.DTOs;
 using LprWebhookApi.Models.Entities;
+using LprWebhookApi.Services;
 using Serilog;
 using System.Text.Json;
 using System.Net;
@@ -14,15 +15,17 @@ namespace LprWebhookApi.Controllers;
 public class LprWebhookController : ControllerBase
 {
     private readonly LprDbContext _context;
+    private readonly WhitelistSyncService _whitelistSyncService;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public LprWebhookController(LprDbContext context)
+    public LprWebhookController(LprDbContext context, WhitelistSyncService whitelistSyncService)
     {
         _context = context;
+        _whitelistSyncService = whitelistSyncService;
     }
 
     [HttpPost("plate-recognition")]
@@ -58,6 +61,9 @@ public class LprWebhookController : ControllerBase
 
             // Save plate recognition result
             var plateResult = await SavePlateRecognitionResult(site.Id, device.Id, request.AlarmInfoPlate);
+
+            // Process whitelist sync if needed
+            await _whitelistSyncService.ProcessWhitelistSync(device.Id);
 
             // Process whitelist and create entry log
             var (entryLog, whitelistEntry) = await ProcessPlateRecognition(site.Id, device.Id, plateResult);
@@ -136,6 +142,12 @@ public class LprWebhookController : ControllerBase
                 Log.Warning("Device not found: {SerialNumber} in site {SiteCode}", request.SerialNumber, siteCode);
             }
 
+            // Process whitelist sync if needed
+            if (device != null)
+            {
+                await _whitelistSyncService.ProcessWhitelistSync(device.Id);
+            }
+
             // Check for pending commands
             var response = await GetPendingCommands(site.Id, device?.Id);
 
@@ -196,6 +208,12 @@ public class LprWebhookController : ControllerBase
 
                 _context.DeviceHeartbeats.Add(heartbeat);
                 await _context.SaveChangesAsync();
+            }
+
+            // Process whitelist sync if needed
+            if (device != null)
+            {
+                await _whitelistSyncService.ProcessWhitelistSync(device.Id);
             }
 
             // Get pending commands and business logic
@@ -660,6 +678,34 @@ public class LprWebhookController : ControllerBase
                             Plate = commandData.GetValueOrDefault("plate", "").ToString() ?? ""
                         });
                     }
+                    else if (command.CommandType == "whitelist_clear")
+                    {
+                        whitelistOp.OperateType = 1; // Delete
+                        whitelistOp.WhiteListData.Add(new WhiteListData
+                        {
+                            Plate = "" // Empty plate clears all
+                        });
+                    }
+                    else if (command.CommandType == "whitelist_add_batch")
+                    {
+                        whitelistOp.OperateType = 0; // Add
+                        var whitelistData = commandData.GetValueOrDefault("whitelist_data", new object[0]);
+                        if (whitelistData is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in jsonElement.EnumerateArray())
+                            {
+                                var itemDict = JsonSerializer.Deserialize<Dictionary<string, object>>(item.GetRawText());
+                                whitelistOp.WhiteListData.Add(new WhiteListData
+                                {
+                                    Plate = itemDict?.GetValueOrDefault("plate", "").ToString() ?? "",
+                                    Enable = int.Parse(itemDict?.GetValueOrDefault("enable", "1").ToString() ?? "1"),
+                                    NeedAlarm = int.Parse(itemDict?.GetValueOrDefault("need_alarm", "0").ToString() ?? "0"),
+                                    EnableTime = itemDict?.GetValueOrDefault("enable_time", "")?.ToString(),
+                                    OverdueTime = itemDict?.GetValueOrDefault("overdue_time", "")?.ToString()
+                                });
+                            }
+                        }
+                    }
 
                     // Mark command as processed
                     command.IsProcessed = true;
@@ -697,8 +743,25 @@ public class LprWebhookController : ControllerBase
             ChannelNum = 0
         };
 
-        // Process different command types
-        foreach (var command in pendingCommands)
+        // Check for whitelist commands first
+        var whitelistCommands = pendingCommands
+            .Where(c => c.CommandType!.StartsWith("whitelist_"))
+            .Take(5)
+            .ToList();
+
+        if (whitelistCommands.Any())
+        {
+            response.WhiteListOperate = await BuildWhitelistOperations(whitelistCommands);
+
+            // Process next sync step if needed
+            if (deviceId.HasValue)
+            {
+                await _whitelistSyncService.ProcessNextSyncStep(deviceId.Value);
+            }
+        }
+
+        // Process other command types
+        foreach (var command in pendingCommands.Where(c => !c.CommandType!.StartsWith("whitelist_")))
         {
             switch (command.CommandType)
             {
