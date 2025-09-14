@@ -227,24 +227,24 @@ public class CreateWhitelistRequest
     public string EntryType { get; set; } = "tenant"; // 'tenant', 'visitor', 'staff', 'temporary'
     public bool IsEnabled { get; set; } = true;
     public bool IsBlacklist { get; set; } = false;
-    
+
     // Visitor fields
     public string? VisitorName { get; set; }
     public string? VisitorPhone { get; set; }
     public string? VisitorCompany { get; set; }
     public string? VisitPurpose { get; set; }
-    
+
     // Time control
     public DateTime? EnableTime { get; set; }
     public DateTime? ExpiryTime { get; set; }
     public int? MaxEntries { get; set; }
-    
+
     // Recurring access
     public bool IsRecurring { get; set; } = false;
     public string? RecurringPattern { get; set; }
     public TimeOnly? RecurringStartTime { get; set; }
     public TimeOnly? RecurringEndTime { get; set; }
-    
+
     public string? Notes { get; set; }
 }
 
@@ -276,4 +276,13 @@ public class WhitelistResponse
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+public class LookupResponse
+{
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public int? NumericValue { get; set; }
+    public int? SortOrder { get; set; }
 }

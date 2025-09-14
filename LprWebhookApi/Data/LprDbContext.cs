@@ -26,6 +26,7 @@ public class LprDbContext : DbContext
     public DbSet<CommandQueue> CommandQueue { get; set; }
     public DbSet<ResponseLog> ResponseLogs { get; set; }
     public DbSet<SiteConfiguration> SiteConfigurations { get; set; }
+    public DbSet<LookupTable> LookupTables { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -302,5 +303,19 @@ public class LprDbContext : DbContext
         modelBuilder.Entity<EntryLog>()
             .HasIndex(e => e.DeviceId)
             .HasDatabaseName("idx_entry_logs_device");
+
+        // Lookup table indexes
+        modelBuilder.Entity<LookupTable>()
+            .HasIndex(l => new { l.Category, l.Code })
+            .IsUnique()
+            .HasDatabaseName("idx_lookup_category_code");
+
+        modelBuilder.Entity<LookupTable>()
+            .HasIndex(l => new { l.Category, l.SortOrder })
+            .HasDatabaseName("idx_lookup_category_sort");
+
+        modelBuilder.Entity<LookupTable>()
+            .HasIndex(l => l.Category)
+            .HasDatabaseName("idx_lookup_category");
     }
 }
