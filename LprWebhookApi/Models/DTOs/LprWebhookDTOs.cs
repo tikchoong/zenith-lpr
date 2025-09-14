@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LprWebhookApi.Models.DTOs;
 
@@ -196,12 +197,25 @@ public class CarBrandData
 // Heartbeat Request (form-data format)
 public class HeartbeatRequest
 {
+    [FromForm(Name = "device_name")]
     public string DeviceName { get; set; } = string.Empty;
+
+    [FromForm(Name = "ipaddr")]
     public string IpAddress { get; set; } = string.Empty;
+
+    [FromForm(Name = "port")]
     public string Port { get; set; } = string.Empty;
+
+    [FromForm(Name = "user_name")]
     public string UserName { get; set; } = string.Empty;
+
+    [FromForm(Name = "pass_wd")]
     public string Password { get; set; } = string.Empty;
+
+    [FromForm(Name = "serialno")]
     public string SerialNumber { get; set; } = string.Empty;
+
+    [FromForm(Name = "channel_num")]
     public string ChannelNum { get; set; } = string.Empty;
 }
 

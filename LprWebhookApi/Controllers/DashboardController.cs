@@ -86,7 +86,7 @@ public class DashboardController : ControllerBase
                 },
 
                 RecentAlerts = await GetRecentAlerts(site.Id),
-                
+
                 SystemHealth = new
                 {
                     DatabaseConnected = true,
@@ -108,7 +108,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("activity-chart")]
-    public async Task<ActionResult<object>> GetActivityChart(string siteCode, 
+    public async Task<ActionResult<object>> GetActivityChart(string siteCode,
         [FromQuery] string period = "today", [FromQuery] string groupBy = "hour")
     {
         try
@@ -119,13 +119,13 @@ public class DashboardController : ControllerBase
                 return NotFound($"Site '{siteCode}' not found");
             }
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             DateTime startDate;
-            
+
             switch (period.ToLower())
             {
                 case "today":
-                    startDate = DateTime.Today;
+                    startDate = DateTime.UtcNow.Date;
                     break;
                 case "week":
                     startDate = now.AddDays(-7);
@@ -134,7 +134,7 @@ public class DashboardController : ControllerBase
                     startDate = now.AddDays(-30);
                     break;
                 default:
-                    startDate = DateTime.Today;
+                    startDate = DateTime.UtcNow.Date;
                     break;
             }
 
@@ -209,7 +209,7 @@ public class DashboardController : ControllerBase
                     d.IsOnline,
                     d.LastHeartbeat,
                     d.FirmwareVersion,
-                    UptimeMinutes = d.LastHeartbeat.HasValue ? 
+                    UptimeMinutes = d.LastHeartbeat.HasValue ?
                         (int)(DateTime.UtcNow - d.LastHeartbeat.Value).TotalMinutes : (int?)null,
                     TodayRecognitions = _context.PlateRecognitionResults
                         .Count(p => p.DeviceId == d.Id && p.CreatedAt >= DateTime.Today)
@@ -240,7 +240,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("top-vehicles")]
-    public async Task<ActionResult<object>> GetTopVehicles(string siteCode, 
+    public async Task<ActionResult<object>> GetTopVehicles(string siteCode,
         [FromQuery] int days = 7, [FromQuery] int limit = 10)
     {
         try
@@ -251,7 +251,7 @@ public class DashboardController : ControllerBase
                 return NotFound($"Site '{siteCode}' not found");
             }
 
-            var startDate = DateTime.Now.AddDays(-days);
+            var startDate = DateTime.UtcNow.AddDays(-days);
 
             var topVehicles = await _context.EntryLogs
                 .Include(e => e.Tenant)
@@ -265,9 +265,9 @@ public class DashboardController : ControllerBase
                     AllowedEntries = g.Count(e => e.EntryStatus == "allowed"),
                     DeniedEntries = g.Count(e => e.EntryStatus == "denied"),
                     LastEntry = g.Max(e => e.EntryTime),
-                    TenantName = g.FirstOrDefault(e => e.Tenant != null) != null ? 
+                    TenantName = g.FirstOrDefault(e => e.Tenant != null) != null ?
                         g.FirstOrDefault(e => e.Tenant != null)!.Tenant!.TenantName : null,
-                    StaffName = g.FirstOrDefault(e => e.Staff != null) != null ? 
+                    StaffName = g.FirstOrDefault(e => e.Staff != null) != null ?
                         g.FirstOrDefault(e => e.Staff != null)!.Staff!.StaffName : null,
                     EntryType = g.FirstOrDefault()!.EntryType
                 })
@@ -351,7 +351,7 @@ public class DashboardController : ControllerBase
         // Recent denied entries
         var recentDenied = await _context.EntryLogs
             .Include(e => e.Device)
-            .Where(e => e.SiteId == siteId && e.EntryStatus == "denied" && e.EntryTime >= DateTime.Now.AddHours(-24))
+            .Where(e => e.SiteId == siteId && e.EntryStatus == "denied" && e.EntryTime >= DateTime.UtcNow.AddHours(-24))
             .OrderByDescending(e => e.EntryTime)
             .Take(10)
             .Select(e => new

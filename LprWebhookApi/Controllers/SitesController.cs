@@ -262,8 +262,8 @@ public class SitesController : ControllerBase
                 return NotFound($"Site '{siteCode}' not found");
             }
 
-            var today = DateTime.Today;
-            var thisMonth = new DateTime(today.Year, today.Month, 1);
+            var today = DateTime.UtcNow.Date;
+            var thisMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
             var stats = new
             {

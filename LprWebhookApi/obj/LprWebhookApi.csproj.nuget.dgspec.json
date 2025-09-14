@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/tc/Desktop/TCDev2/LPR/LprWebhookApi/LprWebhookApi.csproj": {}
+    "/Users/tc/Desktop/TCDev2/LPR/zenith-lpr/LprWebhookApi/LprWebhookApi.csproj": {}
   },
   "projects": {
-    "/Users/tc/Desktop/TCDev2/LPR/LprWebhookApi/LprWebhookApi.csproj": {
+    "/Users/tc/Desktop/TCDev2/LPR/zenith-lpr/LprWebhookApi/LprWebhookApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/tc/Desktop/TCDev2/LPR/LprWebhookApi/LprWebhookApi.csproj",
+        "projectUniqueName": "/Users/tc/Desktop/TCDev2/LPR/zenith-lpr/LprWebhookApi/LprWebhookApi.csproj",
         "projectName": "LprWebhookApi",
-        "projectPath": "/Users/tc/Desktop/TCDev2/LPR/LprWebhookApi/LprWebhookApi.csproj",
+        "projectPath": "/Users/tc/Desktop/TCDev2/LPR/zenith-lpr/LprWebhookApi/LprWebhookApi.csproj",
         "packagesPath": "/Users/tc/.nuget/packages/",
-        "outputPath": "/Users/tc/Desktop/TCDev2/LPR/LprWebhookApi/obj/",
+        "outputPath": "/Users/tc/Desktop/TCDev2/LPR/zenith-lpr/LprWebhookApi/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/tc/.nuget/NuGet/NuGet.Config"
@@ -46,7 +46,23 @@
           "dependencies": {
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[8.0.15, )"
+              "version": "[8.0.10, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.0, )"
             },
             "Serilog.AspNetCore": {
               "target": "Package",

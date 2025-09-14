@@ -100,6 +100,14 @@ public class LprWebhookController : ControllerBase
             Log.Information("Site Code: {SiteCode}", siteCode);
             Log.Information("Device: {DeviceName} ({SerialNumber})", request.DeviceName, request.SerialNumber);
             Log.Information("IP: {IpAddress}:{Port}", request.IpAddress, request.Port);
+            Log.Information("User: {UserName}, Channel: {ChannelNum}", request.UserName, request.ChannelNum);
+
+            // Debug: Log all form data received
+            if (HttpContext.Request.HasFormContentType)
+            {
+                var formData = HttpContext.Request.Form;
+                Log.Information("Form data received: {FormKeys}", string.Join(", ", formData.Keys.Select(k => $"{k}={formData[k]}")));
+            }
 
             // Find site
             var site = await _context.Sites.FirstOrDefaultAsync(s => s.SiteCode == siteCode);
@@ -166,7 +174,7 @@ public class LprWebhookController : ControllerBase
     }
 
     [HttpPost("comet-poll")]
-    public async Task<IActionResult> CometPoll(string siteCode, [FromBody] HeartbeatRequest request)
+    public async Task<IActionResult> CometPoll(string siteCode, [FromForm] HeartbeatRequest request)
     {
         var startTime = DateTime.UtcNow;
 
@@ -175,6 +183,14 @@ public class LprWebhookController : ControllerBase
             Log.Information("=== LPR Comet Poll Request Received ===");
             Log.Information("Site Code: {SiteCode}", siteCode);
             Log.Information("Device: {DeviceName} ({SerialNumber})", request.DeviceName, request.SerialNumber);
+            Log.Information("IP: {IpAddress}:{Port}", request.IpAddress, request.Port);
+
+            // Debug: Log all form data received
+            if (HttpContext.Request.HasFormContentType)
+            {
+                var formData = HttpContext.Request.Form;
+                Log.Information("Form data received: {FormKeys}", string.Join(", ", formData.Keys.Select(k => $"{k}={formData[k]}")));
+            }
 
             // Find site
             var site = await _context.Sites.FirstOrDefaultAsync(s => s.SiteCode == siteCode);
@@ -500,7 +516,7 @@ public class LprWebhookController : ControllerBase
         {
             if (timeStamp?.Timeval?.Sec > 0)
             {
-                return DateTimeOffset.FromUnixTimeSeconds(timeStamp.Timeval.Sec).DateTime;
+                return DateTimeOffset.FromUnixTimeSeconds(timeStamp.Timeval.Sec).UtcDateTime;
             }
 
             if (timeStamp?.Timeval?.DecYear > 0)
@@ -511,7 +527,8 @@ public class LprWebhookController : ControllerBase
                     Math.Max(1, timeStamp.Timeval.DecDay),
                     timeStamp.Timeval.DecHour,
                     timeStamp.Timeval.DecMinute,
-                    timeStamp.Timeval.DecSecond);
+                    timeStamp.Timeval.DecSecond,
+                    DateTimeKind.Utc);
             }
         }
         catch (Exception ex)

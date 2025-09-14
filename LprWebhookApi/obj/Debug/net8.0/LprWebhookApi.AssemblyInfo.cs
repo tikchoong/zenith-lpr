@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LprWebhookApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+72128695f4b213b551e72dff1d4f2cc511325134")]
 [assembly: System.Reflection.AssemblyProductAttribute("LprWebhookApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LprWebhookApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -216,13 +216,13 @@ public class EntryLogsController : ControllerBase
                 return NotFound($"Site '{siteCode}' not found");
             }
 
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var thisWeek = today.AddDays(-(int)today.DayOfWeek);
-            var thisMonth = new DateTime(today.Year, today.Month, 1);
+            var thisMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
             // Use provided date range or default to this month
             var startDate = fromDate ?? thisMonth;
-            var endDate = toDate ?? DateTime.Now;
+            var endDate = toDate ?? DateTime.UtcNow;
 
             var query = _context.EntryLogs.Where(e => e.SiteId == site.Id);
 
@@ -267,9 +267,10 @@ public class EntryLogsController : ControllerBase
                     .Include(e => e.Device)
                     .Where(e => e.EntryTime >= startDate && e.EntryTime <= endDate)
                     .GroupBy(e => new { e.DeviceId, e.Device!.DeviceName })
-                    .Select(g => new { 
-                        DeviceId = g.Key.DeviceId, 
-                        DeviceName = g.Key.DeviceName, 
+                    .Select(g => new
+                    {
+                        DeviceId = g.Key.DeviceId,
+                        DeviceName = g.Key.DeviceName,
                         Count = g.Count(),
                         AllowedCount = g.Count(e => e.EntryStatus == "allowed")
                     })
@@ -279,8 +280,9 @@ public class EntryLogsController : ControllerBase
                 HourlyBreakdown = await query
                     .Where(e => e.EntryTime >= today)
                     .GroupBy(e => e.EntryTime.Hour)
-                    .Select(g => new { 
-                        Hour = g.Key, 
+                    .Select(g => new
+                    {
+                        Hour = g.Key,
                         Count = g.Count(),
                         AllowedCount = g.Count(e => e.EntryStatus == "allowed")
                     })
@@ -393,7 +395,7 @@ public class EntryLogsController : ControllerBase
                            $"{entry.Confidence}\n";
                 }
 
-                var fileName = $"entry_logs_{siteCode}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                var fileName = $"entry_logs_{siteCode}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
                 return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv", fileName);
             }
 
