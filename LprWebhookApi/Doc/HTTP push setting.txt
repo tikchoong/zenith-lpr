@@ -1,0 +1,2022 @@
+License plate recognition all-in-one
+
+HTTP Communication
+Protocol Description
+Manual
+
+Thank you very much for using our products, we will be happy to
+provide you with the best service.
+
+This manual may contain technically inaccurate places or text errors
+that you are welcome to correct.
+
+The contents of this manual will be updated regularly and will be
+added in the new version of this manual.
+
+We may improve or update the products or procedures described in
+this manual at any time.
+
+Version change record
+
+
+Versio
+n
+numb
+er
+
+The
+
+propose
+d date
+
+Version description
+
+Archive
+number
+
+
+1.8.
+
+0
+
+2018.08.23
+
+1. Add
+http://www.http.//www.http://www.http.//www.http://www.http://w
+ww.http
+
+201808231
+
+80
+
+
+timeStamp
+
+I. HTTP server configuration
+
+1. Using HTTP push first requires the user to establish an HTTP server and
+configure the address of the HTTP server to the camera all-in-one;
+
+2. When the all-in-one has an identification result (or other content that
+needs to be pushed), an HTTP protocol message is sent to the specified server
+address;
+
+3. On the All-in-One web page, after logging in, click on the menu bar - >
+Advanced Settings - > HTTP push, and enter the settings interface for HTTP
+push (slightly different versions);
+
+4. The server that receives HTTP push, configured to include address (ip
+address or domain name can be filled in), port number, whether to turn on ssl
+connection,ssl port number, and timeout setting. Please configure according to
+the condition of the server set up;
+
+
+5. Http servers can be configured with 1 primary server, up to 3 alternate
+servers, if the primary server is checked first, the camera is pushed only to the
+primary server, and only when the primary server is disconnected, to the
+alternate server, and if the primary service is not checked first, data is pushed
+to   the primary/standby server at the same time;
+
+6. HTTP push specific configuration, i.e. what HTTP needs to push,
+
+including license plate recognition results,IO trigger, serial 485 data, needs to
+be configured for the u rlpush.
+
+7. HTTP heartbeat is divided into cancel heartbeat, normal
+heartbeat,comet polling;comet polling has been interacting with the server push
+heartbeat,  and the server can carry business processing in reply messages;
+
+
+8. HTTP offline check, when the offline check is turned on, the camera will
+check HTTP offline, offline check is divided into heartbeat check and recognition
+results check, heartbeat check is normal heartbeat time check, recognition
+results check when the recognition results are generated, push recognition
+results need to receive a reply from the server during the check time, otherwise
+the camera will be offline, when the camera is offline, offline related business
+processing;
+
+9. Configure the number of reisuses, up to 4 times, that is, when a push is
+generated, if the push is not successful, the camera will reiser the push data;
+
+Second, license plate identification results push
+
+When push license plate recognition results are turned on and push url is
+configured, the camera sends a message to: when the license plate recognition
+results are generated
+http://192.168.1.106/devicemanagement/php/plateresult.php；
+
+Note: With the addition of HTTP retransive, license plate recognition results
+push messages have increased compared to older versions
+
+3 fields are:plateid,isoffline,gioouts;
+
+Data content:JSON format(utf8 encoding).
+
+
+{
+
+"AlarmInfoPlate" : {
+
+"channel" : 0,
+"deviceName" : "IVS",
+
+"ipaddr" : "192.168.1.100",
+
+"result" : {
+
+"PlateResult" : {
+
+The red font section is the extension information
+
+"plate_true_width" : 80,
+
+"plate_distance" : 40,
+"is_fake_plate" : 1, "car_location" :
+
+{
+
+"RECT" : {
+
+"bottom" : 545,
+
+"left" : 871,
+
+"right" : 1365,
+
+"top" : 391
+
+}
+
+},
+
+"car_brand" :
+
+{
+
+"brand" : 6
+
+"year" : 2018
+
+"type" : 1
+
+},
+
+"feature_Code": "asf", // Extension information ends
+
+"bright" : 0,
+
+"carBright" : 0,
+
+"carColor" : 0,
+
+"colorType" : 0,
+
+
+"colorValue" : 0,
+
+"confidence" : 0,
+
+"direction" : 0, "imagePath" :
+
+"%2Fmmc%2FVzIPCCap%2F2015_09_09%2F1714224504  %CE%DE_.jpg",
+
+"license": "No "
+
+"location" : { "RECT" : {
+
+"bottom" : 0,
+
+"left" : 0,
+
+"right" : 0,
+
+"top" : 0
+
+}
+
+},
+
+"timeStamp" : {
+
+"Timeval" : {
+
+"decday" : 8,
+
+"dechour" : 10,
+
+"decmin" : 26,
+
+"decmon" : 6,
+
+"decsec" : 28,
+
+"decyear" : 2018,
+
+"sec" : 1441815171,
+
+"usec" : 672241
+
+}
+
+},
+
+"timeUsed" : 0,
+
+"triggerType" : 4,
+
+"type" : 0,
+
+"plateid" : 123,
+
+"isoffline" : 0, "gioouts" :[
+
+{"ionum" : 1, "ctrltype": 0} ...
+
+]
+
+}
+
+},
+
+"serialno" : "eff50e18-e3d3862b"
+
+}
+
+}
+
+Depending on the level of content detail, the content of the data will vary, and
+All will be passed back to the full content, including only some of the important
+content in a nutritious way, please select the detail as needed. When the alarm
+is turned on to send a picture, the image data in json will be included.
+
+
+The json data that contains all (extended) content is as follows, with option "All"
+removing the first-class extension information and "location" removed "in more
+detail" TimeUsed,"Shorter Options" also remove "colorValue","confidence",
+"bright", "carBright" , "carColor"and the option "briefly" further remove the
+"timeStamp"
+
+illustrate:
+
+
+The name
+of the field
+
+AlarmInfo
+Plate
+
+type
+
+json
+
+The
+range
+of
+values
+
+not
+
+Whether it
+is
+necessary
+
+be
+
+description
+
+The push result is the license plate recognition result
+
+
+serialno
+
+string
+
+not   be
+
+Device serial number, device unique
+
+
+channel
+
+int
+
+[0, 10  be
+
+0]
+
+Default channel number (reserved)
+
+
+deviceNa
+me
+
+string
+
+not   be
+
+The device name
+
+
+ipaddr
+
+string
+
+not   be
+
+Device ip address
+
+
+result
+
+json
+
+not   be
+
+The actual data
+
+
+PlateResu
+lt
+
+json
+
+not   be
+
+License plate recognition result information
+
+
+license
+
+string
+
+not   be
+
+License plate number string, such as "King
+AAAAAAA"
+
+
+colorValu
+e
+
+int
+
+[0, 3   be
+
+2]
+
+( Reserved)
+
+
+colorType
+
+int
+
+[0, 5]  be
+
+License plate color
+
+0:unknown, 1:blue,2:yellow,3:white,4:black,5:green
+
+
+type
+
+int
+
+[0, 1   be
+
+9]
+
+License plate type 0: Unknown license plate :, 1: blue
+car,2: black car,
+
+3: single row yellow card,4: double row yellow card,
+5:police car license plate,6:armed police license
+plate,7: personalized license plate,8:single row military
+licenseplate,9 : Double row military license plate, 1
+
+0: Embassy license plate, 11:Hong Kong in and out of
+Chinese mainland license plate, 12:agricultural vehicles
+
+
+The name
+of the field
+
+confidenc
+e
+
+type
+
+int
+
+The
+range
+of
+values
+
+[0, 10
+
+0]
+
+Whether it
+is
+
+necessary
+
+be
+
+description
+
+License plate, 13:coach license plate, 14:Macau in and
+out of Chinese mainland license plate, 15 : double-
+decker armed police license plate, 16: armed
+
+policeheadquarters license plate, 17:double-decker
+armed police unit license plate,
+
+18: Civil aviation license plate, 19: new energy license
+plate
+
+Identify the confidence of the results 1- 100
+
+
+bright
+
+int
+
+not   be
+
+Brightness rating (reserved)
+
+
+direction
+
+int
+
+[0, 4]  be
+
+Direction of travel of the
+
+car,0:Unknown, 1:Left,2:Right,3:Up, 4:Down
+
+
+location
+
+json
+
+not   be
+
+The position of the license plate in the picture
+
+
+RECT
+
+json
+
+not   be
+
+The position is rectangular;left-right-top-bottom: The
+license plate is in the middle of the picture
+
+place
+
+
+timeUsed
+
+int
+
+not   be
+
+Identify the time taken
+
+
+carBright
+
+int
+
+not   be
+
+Body brightness (reserved)
+
+
+carColor
+
+int
+
+not   be
+
+Body color (reserved)
+
+
+timeStam
+p
+
+json
+
+not   be
+
+Identify the timestamp of the corresponding frame for
+the result
+
+
+Timeval
+
+json
+
+not   be
+
+The type of timestamp structure
+
+
+sec
+
+uint32
+
+not   be
+
+Seconds from January 1, 1970 to the corresponding
+frame
+
+
+dechour
+
+int
+
+[0, 6   be
+
+0]
+
+Time, hour
+
+
+decmin
+
+Int
+
+[0, 6   be
+
+0]
+
+Time, minutes
+
+
+The name
+of the
+field
+
+decsec
+
+type
+
+Int
+
+The
+range
+of
+values
+
+[0, 6
+
+0]
+
+Whether it
+is
+necessary
+
+be
+
+Time, seconds
+
+description
+
+
+decday
+
+Int
+
+[0, 3   be
+
+1]
+
+Time, day
+
+
+decmon
+
+Int
+
+[0, 1   be
+
+2]
+
+Time, month
+
+
+decyear
+
+Int
+
+[0, 20  be
+
+38]
+
+Time, year
+
+
+usec
+
+uint32
+
+not   be
+
+Milliseconds from January 1, 1970 to the
+corresponding frame
+
+
+triggerTy
+pe
+
+int
+
+[ 1, 8]   be
+
+The type of trigger for the current result:1:Automatic
+trigger type,2:External input trigger(IO
+input),4:software trigger(SDK),8:virtual coil trigger
+
+
+imagePat
+h
+
+string
+
+not   be
+
+Recognizes the path to a large picture, and there is
+no such field when pushing a large picture is turned
+on
+
+
+imageFile
+
+string
+
+not   be
+
+Identify the string after the large picture content
+passes base64
+
+
+imageFile
+Len
+
+int
+
+not   be
+
+Identify the length of the large picture content, noting
+that it is not the length after base64
+
+
+imageFra
+gment File
+
+string
+
+not   be
+
+A string that identifies the contents of a small picture
+of the license plate after base64
+
+
+imageFra
+gment File
+Len
+
+int
+
+not   be
+
+Identify the length of the content of the small picture,
+noting that it is not the length after base64
+
+
+plateid
+
+unsig
+ned i
+nt
+
+not
+
+not
+
+Identify the resulting license plate ID
+
+
+The name
+of the
+field
+
+isoffline
+
+type
+
+int
+
+The
+range
+of
+values
+
+[0, 1]]
+
+Whether it
+is
+
+necessary
+be
+
+description
+
+Device offline status,0: online, 1: offline
+
+
+ionum
+
+int
+
+[0, 3]  be
+
+IO OUT serial number, currently up to 4 IOouts
+
+
+ctrltype
+
+int
+
+[0, 2]  be
+
+Type of open gate:HTTP_IO_OUT_STATUS
+
+
+plate_ true
+
+_ width
+
+int
+
+[ 10, 1  be
+
+000]
+
+The true width of the license plate
+
+
+plate_ dist
+ance
+
+int
+
+[0, 10  be
+
+00]
+
+License plate distance
+
+
+is_fake_pl
+ate
+
+int
+
+[0, 1]  be
+
+Whether the license plate,0 : real license plate, 1: fake
+license plate
+
+
+car_locati
+on
+
+not
+
+not   be
+
+The position of the head
+
+
+car_brand
+
+not
+
+not
+
+not
+
+Vehicle brand
+
+
+brand
+
+int
+
+[0, 12  be
+
+8]
+
+Vehicle brand
+
+
+year
+
+int
+
+[0, 65  be
+
+535]
+
+The year of the vehicle
+
+
+type
+
+int
+
+[0, 12  be
+
+8]
+
+Vehicle type
+
+
+feature_C
+ode
+
+string
+
+length  be
+[0, 2
+
+0]
+
+Vehicle signature
+
+Note: After adding http retranslation, you need to use this feature, the server's
+reply must carry the plateid field, consistent with the value pushed by the camera;
+Center server replies:
+
+
+{
+
+"Response_AlarmInfoPlate": {
+
+"info":"ok",/ Reply to ok open the gate
+
+"plateid": 123,// Current license plate id
+
+"channelNum": 0, / Reply to open port number, or 0 by default if not
+
+"manualTrigger": "ok",/ Reply ok for manual triggering
+(Optional, no screenshots are triggered but the field is not added).
+"TriggerImage" : {
+
+Reply to the screenshot content port number (optional, do not fill in the default use http
+
+page configuration port).
+
+"port":80,
+
+Reply to the relative path of the screenshot content (optional, no screenshot is triggered but
+the field is not added).
+
+"snapImageRelativeUrl" : "/devicemanagement/php/receivedeviceinfo.php",
+
+Reply to the absolute path of the screenshot content (optional, no screenshot is triggered
+but the field is not added).
+
+"snapImageAbsolutelyUrl":"http://192.168.1.106/devicemanagement/php/receivedevicein fo.php"
+
+},
+
+"is_pay":"true",
+
+Reply serial data can be sent to the corresponding serial port
+"serialData" :[
+
+{
+
+"serialChannel":0,
+"data" : "...",
+
+"dataLen" : 123
+
+},
+
+Data 1,which can or may not be received, will be sent to the corresponding serial port upon
+receipt
+
+"serialChannel": 1,
+"data" : " ",
+
+"dataLen" : 123
+
+/ Data 2,which can or may not be received, will be sent to the corresponding serial port
+
+]
+
+}
+
+}
+
+2.1 Broken Retransm
+
+1. When the HTTP server is disconnected from the server for some reason, the
+camera records the identification results of the push failure as offline records, and when
+the server is reconnected, the camera determines whether an offline record needs to be
+pushed according to the configuration, while sending an offline record;
+
+2. Configuration in the web page configuration, turn on the disconnect retransive function,
+note that when the cancellation of the disconnect retranspiration function, will empty the
+current camera offline records;
+
+
+3. The camera push recognition results, compared to the older version of the push
+message, add three new fields:plateid, isoffline, gioouts, offline record isoffline with a value
+of    1;
+
+4. When the server replies to the camera recognition results, the online record needs to
+reply the plateid field value to the camera message;
+
+5. When the server replies to offline recognition results, it needs to reply to whether it
+continues to receive offline records and receives the latest
+
+plateid；
+
+6. Offline offline records theoretically support the re-push of up to 9000 offline records;
+
+7. In the process of pushing offline records, if a new recognition result occurs,
+priority push new recognition results, at this time the push of offline records is
+not completed, will directly terminate processing, when the new identification
+results are pushed out, the party starts pushing offline records again; Note:
+When pushing offline records, the camera has not yet received a response
+from  the server, a new recognition result is generated, the camera terminates
+the push processing of the previous offline record, directly pushes the new
+identification results, when the new recognition results are pushed, Push on to
+an   offline record, so the server may receive two identical offline records at this
+time, the server can filter according to plateid;
+
+
+{
+
+"AlarmInfoPlate" : {
+
+"channel" : 0,
+"deviceName" : "IVS",
+
+"ipaddr" : "192.168.1.100",
+
+"result" : {
+
+"PlateResult" : {
+
+"bright" : 0,
+
+"carBright" : 0,
+
+"carColor" : 0,
+
+"colorType" : 0,
+
+"colorValue" : 0,
+
+"confidence" : 0,
+
+"direction" : 0, "imagePath" :
+
+"%2Fmmc%2FVzIPCCap%2F2015_09_09%2F1714224504  %CE%DE_.jpg",
+
+"license": "No "
+
+"location" : { "RECT" : {
+
+"bottom" : 0,
+
+"left" : 0,
+
+"right" : 0,
+
+"top" : 0
+
+}
+
+},
+
+"timeStamp" : {
+
+"Timeval" : {
+
+"decday" : 8,
+
+"dechour" : 10,
+
+"decmin" : 26,
+
+"decmon" : 6,
+
+"decsec" : 28,
+
+"decyear" : 2018,
+
+
+"sec" : 1441815171,
+
+"usec" : 672241
+
+}
+
+},
+
+"timeUsed" : 0,
+
+"triggerType" : 4,
+
+"type" : 0,
+
+"plateid" : 123,
+
+"isoffline" : 0,
+"gioouts" :[
+
+{"ionum" : 1, "ctrltype": 0} ]
+
+}
+
+},
+
+"serialno" : "eff50e18-e3d3862b"
+
+}
+
+}
+
+
+The
+name of
+the field
+
+plateid
+
+type
+
+unsigned int
+
+The
+
+range of
+values
+
+not
+
+Whether
+it is
+necessar
+y
+
+not
+
+description
+
+Identify the resulting license
+plate ID
+
+
+isoffline
+
+int
+
+[0, 1]]     be
+
+Device offline
+status,0:online, 1:offline
+
+
+ionum
+
+int
+
+[0, 3]     be
+
+IO OUT serial number,
+currently up to 4 IOouts
+
+
+ctrltype
+
+int
+
+[0, 2]     be
+
+Type of open
+gate:  HTTP_ IO_ OUT_ STAT
+US
+
+
+server Reply：
+
+{
+
+"Response_AlarmInfoPlate"  : {
+
+...//  Other data
+"ContinuePushOffline"  :{
+
+"plateid"  : 123,
+
+"continue" : 1
+
+}
+
+}
+
+}
+
+
+The name
+
+type
+
+The range
+
+Whether it
+
+descr
+
+
+The name
+of the field
+
+plateid
+
+type
+
+unsigned int
+
+The range
+of values
+
+not
+
+Whether it
+is
+
+necessary
+be
+
+description
+
+Pushed offline license plate record ID
+
+
+continue
+
+unsigned int
+
+[0,1]     be
+
+Whether to continue pushing offline
+records,0:No, 1:Yes
+
+Note: The next offline record continues to be pushed only if the server replies to an
+offline record message and the continue field is 1;
+
+2.2 Series Cameras For the Series cameras,the HTTP
+
+push protocol adds vehicle information as well as pseudo license
+plate information:
+
+
+{
+
+"AlarmInfoPlate" :
+
+{
+
+... / Other fields
+
+"result" :
+
+{
+
+"PlateResult" : {
+
+... /
+
+"plate_true_width" : 80,
+
+"plate_distance" : 40,
+"is_fake_plate" : 1, "car_location" :
+
+{
+
+"RECT" : {
+
+"bottom" : 545,
+
+"left" : 871,
+
+"right" : 1365,
+
+"top" : 391
+
+}
+
+},
+
+"car_brand" :
+
+{
+
+"brand" : 6
+
+"year" : 2018
+
+"type" : 1
+
+},
+
+"feature_Code" : "asf"
+
+}
+
+}
+
+
+}
+
+}
+
+The name     type     The range    Whether it           descr
+
+
+plate_true_width
+
+int
+
+[10, 1000]   be
+
+The true width of
+
+
+plate_distance
+
+int
+
+[0, 1000]    be
+
+License
+
+
+is_fake_plate
+
+int
+
+[0, 1]      be
+
+Whether it 's a0: Real license1:
+br
+
+
+car_location
+
+no    no
+
+be      The
+
+
+car_brand
+
+no    no
+
+no      Vehicle
+
+
+brand
+
+int
+
+[0, 128]     be
+
+Vehicle
+
+
+year
+
+int
+
+[0, 65535]   be
+
+The year of
+
+
+type
+
+int
+
+[0, 128]     be
+
+Vehicle
+
+
+feature_Code
+
+string
+
+lengt[0, 20]   be
+
+Vehicle
+
+Third, the port triggers the information push
+
+When on, if an external input 1 trigger or 2 trigger is turned on in the input and
+output page -> license plate trigger mode, the json format data is pushed when
+there is a change in the input, as follows:
+
+Data content:JSON format(utf8 encoding).
+
+
+{
+
+"AlarmGioIn" : {
+
+"deviceName" : "IVS", "ipaddr" :
+
+"192.168.109.40", "result" :
+
+{
+
+"TriggerResult" :
+
+{
+
+"source" : 3,.
+
+"value" : 1
+
+}
+
+},
+
+"serialno" : "d85b1269-8f942256" }
+
+}
+
+Among them,TriggerResult:
+
+"Source=0 means IO input 1;
+source=1 means IO input 2; and
+source=2 means yes." IO input 3;
+source=3 represents input TCP
+trigger input;
+
+Source=4 means IO input 4;
+
+Value represents the state entered at the time of trigger;
+
+Central server reply content: any legitimate data, the camera does not reply to
+messages business processing
+
+Fourth, serial data push
+
+When serial data push is turned on, the urlis configured to actively push 485 data to
+the server address when the camerareceives 485 data;
+
+Data content:JSON format(utf8 encoding).
+
+
+{
+
+"SerialData":{
+
+"channel": 0, / channel number, currently 0
+
+"serialno": "cead13eb-1a198cd7", / device serial number
+"ipaddr": "192.168.1.100", / Device ip
+
+"deviceName":  "IVS",    / Device name
+
+"serialChannel": 0, / Channel number for serial port, channel 0 for 485 port
+
+1,channel 1 depending on jumper mode 485 mouths 2 or 232
+"data": "Y2guY29tFw",/ serial data, encoded with base64
+"dataLen": 7/ Actual length of serial data
+
+}
+
+}
+
+Central server reply content: any legitimate data, the camera does not reply to
+messages business processing
+
+V. Screenshot data
+
+The device makes the current video when the user has a screenshot in the comet poll
+or in the reply field that receives the identification results
+
+Screenshot and upload,imageFIle field encoded after picture base64, imageFileLen for
+pre-encoding picture length Data content:JSON format(utf8 encoding)
+
+Push screenshot data
+
+{
+
+"ipaddr" : "192.168.1.100",
+
+"TriggerImage": {
+
+"imageFile":"Y2guY29tFw", // Image data(base64 encoding).
+
+"imageFileLen":7                 / The actual length of the picture data
+
+}
+
+}
+
+Central server reply content: any legitimate data, the camera does not reply to
+messages business processing
+
+Sixth, equipment registration
+
+6.1 Normal heartbeat
+
+1. When the camera web page configuration device enrollment status is normal
+heartbeat, the camera regularly pushes a heartbeat message to the primary server:
+
+2. When the main service connection is normal, turn on offline checking, the camera
+every 5S or so to push the heartbeat;
+
+3. When the primary service is connected properly and offline checking is not turned
+on, a heartbeat message is pushed by 30S;
+
+
+4. When the main service heartbeat is lost, the camera tries to connect every 1S;
+
+5. Heartbeat push uses http://www.heartbeat push using http://www.heartbeat push
+
+Data content, in formpost format:
+
+192.168.109.40         caa771fe4a61f3d9Content-Disposition: form-data;
+
+name="device_name"IVS         caa771fe4a61f3d9Content-Disposition: form-data;
+
+name="ipaddr"192.168.109.40         caa771fe4a61f3d9Content-Dispos ition: form-data;
+
+name="port"80         caa771fe4a61f3d9Content-Disposition:
+
+form-data; name="user_name"admin         caa771fe4a61f3d9Content-Disposition:
+
+form-data; name="pass_wd"admin          caa771fe4a61f3d9Content-Disposition: form-data;
+
+name="serialno"d85b1269-8f942256          caa771fe4a61f3d9Content-D isposition: form-
+
+data; name="channel_num" 1--------------------------caa771fe4a61f3d9--
+
+6.2 Comet Polling
+
+1.   When comet polling is turned on, the camera will always interact with the
+HTTP server, keep the connection request, the camera actively send the device
+registration message, the content is consistent with the normal heartbeat content,
+receive a reply, immediately send the next message;
+
+2.  Send a device registration message, consistent with a normal heartbeat
+message;
+
+3.   Comet polling will be handled accordingly based on server replies;
+
+Seven, business processing
+
+1. The camera carries on the corresponding business processing according to the
+reply message of the server.
+
+2. Currently only support push replies for license plate recognition results, as well as
+comet poll message replies, the camera will do business based on the responses;
+
+7.1 Control IO open gate
+
+When the server receives a push of license plate recognition results, or a comet poll, it
+replies to a message from the following structure that triggers an open gate
+
+
+{
+
+"Response_AlarmInfoPlate":
+
+{
+
+"info":"ok",/ Reply to ok open the gate
+
+/  Other data
+
+}
+
+}
+
+7.2 Control serial push 485 data
+
+When the server receives a license plate recognition result push, or comet poll, it replies to
+a message from the following structure that sends 485 data
+
+{
+
+"Response_AlarmInfoPlate": {
+"serialData" :[
+
+{
+
+"serialChannel":0,
+"data" : "...",
+"dataLen" : 123
+
+},
+
+Data 1,which can or may not be received, will be sent to the corresponding serial
+port upon receipt
+
+"serialChannel":1,
+"data" : " ",
+
+"dataLen" : 123
+
+/ Data 2,which can or may not be received, will be sent to the corresponding serial
+port
+
+]
+
+/  Other data
+
+}
+
+}
+
+7.3 Screenshot
+
+When the server receives a push of license plate recognition results, or a comet poll, it
+replies to a message from the following structure that triggers a screenshot:
+
+The camera triggers the current video screenshot and then pushes the screenshot data to
+the server address specified in the SnapImage AbsolutelyUrl field;
+
+
+{
+
+"Response_AlarmInfoPlate":
+
+{
+
+"TriggerImage" : {
+
+Reply to the screenshot content port number (optional, do not fill in the default use
+
+http page configuration port).
+"port":80,
+
+Reply to the relative path of the screenshot content (optional, no screenshot is
+triggered but the field is not added).
+
+"snapImageRelativeUrl" : "/devicemanagement/php/receivedeviceinfo.php",
+
+Reply to the absolute path of the screenshot content (optional, no screenshot is
+triggered but the field is not added).
+
+"snapImageAbsolutelyUrl":"http://192.168.1.106/devicemanagement/php/receivedevicein fo.php"
+
+}
+
+/  Other data
+
+}
+
+}
+
+7.4 Manual trigger recognition
+
+When the server receives a push of license plate recognition results, or a comet poll, it
+replies to a message from the following structure that triggers manual identification:
+
+{
+
+"Response_AlarmInfoPlate": {
+
+"manualTrigger": "ok",/ Reply ok for manual triggering
+
+/  Other data
+
+}
+
+}
+
+Or reply only to the following data:
+
+This triggers the manual identification of the camera, and the device pushes the
+identification result data to the http service side, provided that the service side
+is configured to push the identification data;
+
+
+7.5 Whitelist operation
+
+When the central server receives the identification results of HTTP push, it carries the
+whitelist operation information in the identification result message of the reply Note:
+Single reply message, up to 5 whitelist data;
+
+1. Reply messages are in JSON format, as follows
+
+{
+
+"Response_AlarmInfoPlate": {
+
+...// Other data
+
+"white_list_operate":{
+"operate_type" : 0,
+"white_list_data": [
+
+{
+
+"plate": "King A12345",
+
+
+}, {
+
+]
+
+}
+
+}
+
+}
+
+"enable": 1,
+
+"need_alarm": 1,
+
+"enable_time": "2018-01-01 11:11:11",
+
+"overdue_time": "2018-01-01 11:11:11"
+
+"plate": "Kawa A12345",
+"enable": 1,
+
+"need_alarm": 1,
+
+"enable_time": "2018-01-01 11:11:11",
+
+"overdue_time": "2018-01-01 11:11:11" }
+
+2. The field means something like this:
+
+
+The name of the
+field
+
+type
+
+The range
+of values
+
+Whether it
+is
+
+necessary
+
+description
+
+
+operate_type
+
+int
+
+[0,1]      be
+
+Type of action (0: increase, 1: delete)
+
+
+
+white_ list_ data
+
+not
+
+Number of  be
+units
+
+Whitelist array: Single operation, up to 5
+supported
+
+
+plate
+
+strin
+g
+
+Lengths of  be
+7, 1
+
+5]
+
+License plate (GB2312)
+
+
+enable
+
+int
+
+[0, 1]     be
+
+Whether the current list is valid (0: invalid,
+1,: valid)
+
+
+need_alarm
+
+int
+
+[0, 1]     be
+
+Is the current list blacklisted (0:No,  1:
+Blacklist)
+
+
+The name of the
+field
+
+type
+
+The range
+of values
+
+Whether it
+is
+
+necessary
+
+description
+
+
+enable_time
+
+strin
+g
+
+Fixed
+format,
+
+fixed length:
+19
+
+not
+
+The current list is effective at 11:1:1 on
+2018-01-01
+
+1:11
+
+
+overdue_time
+
+strin
+g
+
+Fixed
+format,
+
+fixed length:
+19
+
+not
+
+Current list expiration time, e.g. 2018-01-01
+11:1
+
+1:11
+
+3. Message example:
+
+Add two whitelist data at the same time (multiple data, in the same format):
+
+
+Article 1 If there is no valid time for whitelisting, the default white list shall be valid
+permanently;
+
+Article 2 A whitelist is valid for a period of time, indicating that the current whitelist is
+valid for that period of time;
+
+{
+
+"Response_AlarmInfoPlate": {
+
+...// Other data
+
+"white_list_operate":{
+"operate_type" : 0,
+"white_list_data": [
+
+{
+
+"plate": "King A12345",
+"enable": 1,
+
+"need_alarm": 0
+
+},
+
+{
+
+"plate": "Kawa A12345",
+"enable": 1,
+
+"need_alarm": 0,
+
+"enable_time": "2018-01-01 11:11:11",
+
+"overdue_time": "2019-01-01 11:11:11" }
+
+]
+
+}
+
+}
+
+}
+
+4. Example of a reply message that removes two whitelists:
+
+
+{
+
+"Response_AlarmInfoPlate": {
+
+...// Other data
+
+"white_list_operate":{
+
+"operate_type" : 1,
+"white_list_data": [
+
+{
+
+
+}, {
+
+}
+
+]
+
+}
+
+}
+
+}
+
+"plate": "King A12345"
+"plate": "Kawa A12345"
+
+5. Example of a reply message that removes all whitelists:
+
+{
+
+"Response_AlarmInfoPlate": {
+
+...// Other data
+
+"white_list_operate":{
+
+"operate_type" : 1,
+"white_list_data": [
+
+{
+
+"plate": ""
+
+}
+
+]
+
+}
+
+}
+
+}
+
+Eight, frequently asked questions
+
+Q:What is device registration?
+
+A:When turned on, the device information is automatically sent to the central
+server at regular intervals, including device ip,port, serial number, and so on.
+
+Q:Set up, request can not be received, what problem?
+
+A:Make sure that the all-in-one has access to the appropriate address for the
+central server. Common problems such as, within the local area network,
+whether the network line is connected, ip address conflicts, whether in the
+accessible segment, if the central server is on the public network, make sure
+
+
+that the all-in-one can access the public network, need to set up the all-in-one
+gateway and dns address. Check that the central server is running.
+
+Q:The request was received, but no data (data format is not correct)?
+
+A:The license plate recognition result push request sends json data, http's body
+content such as
+
+{"AlarmInfoPlate":{...}}
+
+Reception methods such as:
+
+php：
+
+$doc = file_get_contents("php://input"); java:
+
+StringBuffer jb = new StringBuffer(); String
+line = null;
+
+try {
+
+BufferedReader reader = request.getReader();
+
+while ((line = reader.readLine()) != null)
+jb.append(line);
+
+http://stackoverflow.com/questions/3831680/httpservletrequest-get-post-data Catch (Exception e) . .
+
+Q:What is the format of device enrollment?
+
+A:The data sent by the device enrollment request is as follows:
+
+------------------------------cd9a1a32759bContent-Disposition: form-data; name="device_name" 
+IVS------------
+
+------------------cd9a1a32759bContent-Disposition: form-data; name="ipaddr"19 
+2.168.0.100-------------------
+
+-----------cd9a1a32759bContent-Disposition:  form-data;   name="po   
+rt"80------------------------------
+
+cd9a1a32759bContent-Disposition:  form-data;  name="user_na  me"admin------------------------------
+
+cd9a1a32759bContent-Disposition:  form-data;  name="pas  s_wd"admin------------------------------
+
+cd9a1a32759bContent-Disposition: form-data; name="se 
+rialno"fcb68a83-ee8409dd---------------------------
+
+---cd9a1a32759bContent-Disposition:  form-d  ata;  name="channel_num"1------------------------------
+cd9a1a32759b--
+
+As you can see, in formpost format, the receiving method is such as:java is
+received using request.getQueryString, andphp is received using the $_POST
+variable
+
+Q:How do I reply to a request to open the floodgates?
+
+A:Reply to the "Response_AlarmInfoPlate":"info":"ok", "content":"...",
+"is_pay":"true"""info" if ok means open the gate
+
+Q: Can content be Chinesein a reply?
+
+A:All requests are encoded with utf8 and replies are encoded with utf8.
+
+Q: Can I sendusing the ssl connection, our central server is ssl?
+
+A: Set the ssl portin the settings (typically 443),then select On, and the setting
+is                                          fine, note that if the central server does not support 
+ssl connectivity, do not
+choose to turn on the item.
+
+Q: How do I get screenshots?
+
+A:The result of the push is "imagePath": "/snapshot/lpr/tri_snap_24.jpg",followed by an
+http path tothe screenshot, followed by an all-in-one URL to get the screenshot address
+such as http://192.168.1.100:8080/snapshot/lpr/tri_snap_24.jpg
+
+Q: Why did the same license plate return the result twice?
+
+
+A: There is a trigger type, trigger Type,in the results of a push that filters the results based
+on the trigger type.
+
+Q:Central server, received push results, reply to all-in-one, but do not see the
+specific content returned, how to debug the central server?
+
+A:You can view the logs of the access center server on the Web page, and you can see
+what the central server replies to the all-in-one.
+
+Q: When multiple cameras are polling with comet at the same time, the central
+server is under too much pressure, causing the server to fail to respond?
+
+A: comet polling mechanism, for the camera loop to the center server to push the
+heartbeat package data, when the server received a push, reply response, the camera
+immediately started the next heartbeat package push, there is no timer in the middle and
+other delays;
+
+So when the number of cameras is large, use comet to push to a server at the same time,
+pay attention to server performance;
+
