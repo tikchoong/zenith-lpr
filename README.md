@@ -195,6 +195,132 @@ The heartbeat system monitors device connectivity and health, ensuring real-time
 - `channel_num`: Device channel information
 - `received_at`: Server timestamp of heartbeat receipt
 
+### Comet Polling vs. Heartbeat: Key Differences
+
+| Aspect              | Heartbeat (`/heartbeat`)       | Comet Polling (`/comet-poll`) |
+| ------------------- | ------------------------------ | ----------------------------- |
+| **Purpose**         | Device status monitoring       | Real-time command delivery    |
+| **Frequency**       | Periodic (every 30-60 seconds) | Continuous (long-polling)     |
+| **Response Time**   | Standard HTTP response         | May hold connection longer    |
+| **Primary Use**     | Health monitoring              | Command synchronization       |
+| **Connection Type** | Short-lived request/response   | Long-polling connection       |
+| **Data Priority**   | Status updates                 | Command delivery              |
+
+### Detailed Comparison
+
+**Heartbeat Communication:**
+
+- **Function**: Primary purpose is device health monitoring
+- **Timing**: Sent at regular intervals (typically 30-60 seconds)
+- **Response**: Quick acknowledgment with basic status
+- **Use Case**: "Is the device online and functioning?"
+- **Connection**: Standard HTTP request/response cycle
+- **Data**: Device credentials, channel info, basic status
+
+**Comet Polling Communication:**
+
+- **Function**: Real-time command delivery and business logic
+- **Timing**: Continuous or frequent polling for immediate response
+- **Response**: May include complex commands and operations
+- **Use Case**: "Are there any commands waiting for me?"
+- **Connection**: Long-polling technique for near real-time communication
+- **Data**: Commands, whitelist operations, gate controls, screenshots
+
+### When Each is Used
+
+**Heartbeat is used for:**
+
+- ✅ Device registration and identification
+- ✅ Online/offline status tracking
+- ✅ Basic connectivity verification
+- ✅ Firmware version reporting
+- ✅ Network health monitoring
+
+**Comet Polling is used for:**
+
+- ✅ Whitelist synchronization commands
+- ✅ Gate control operations
+- ✅ Screenshot capture requests
+- ✅ Manual trigger commands
+- ✅ Emergency override operations
+- ✅ Real-time business logic execution
+
+### Technical Implementation
+
+**Heartbeat Endpoint:**
+
+```http
+POST /api/lpr/sites/{siteCode}/webhook/heartbeat
+Content-Type: application/x-www-form-urlencoded
+
+serialNumber=device123&userName=admin&password=pass&channelNum=0
+```
+
+**Comet Poll Endpoint:**
+
+```http
+POST /api/lpr/sites/{siteCode}/webhook/comet-poll
+Content-Type: application/x-www-form-urlencoded
+
+serialNumber=device123&userName=admin&password=pass&channelNum=0
+```
+
+### Response Differences
+
+**Heartbeat Response (Simple):**
+
+```json
+{
+  "Response_AlarmInfoPlate": {
+    "info": "ok",
+    "plateId": 0,
+    "channelNum": 0
+  }
+}
+```
+
+**Comet Poll Response (With Commands):**
+
+```json
+{
+  "Response_AlarmInfoPlate": {
+    "info": "ok",
+    "plateId": 0,
+    "channelNum": 0,
+    "white_list_operate": {
+      "operate_type": 0,
+      "white_list_data": [
+        {
+          "plate": "ABC123",
+          "enable": 1,
+          "need_alarm": 0
+        }
+      ]
+    },
+    "triggerImage": {
+      "port": 80,
+      "snapImageAbsolutelyUrl": "http://192.168.1.1:5174/api/screenshot"
+    }
+  }
+}
+```
+
+### Best Practices
+
+**For Device Manufacturers:**
+
+- Use **heartbeat** for regular status updates
+- Use **comet polling** for command retrieval
+- Implement both endpoints for full functionality
+- Handle long-polling timeouts gracefully
+
+**For System Administrators:**
+
+- Monitor heartbeat frequency for device health
+- Use comet polling for urgent command delivery
+- Configure appropriate timeout values
+- Balance polling frequency with network load
+
 ## Command Queue System
 
 ### Overview
