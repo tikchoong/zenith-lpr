@@ -153,7 +153,9 @@ public class LprWebhookController : ControllerBase
             // Process whitelist sync if needed
             if (device != null)
             {
-                await _whitelistSyncService.ProcessWhitelistSync(device.Id);
+                Log.Information("Processing whitelist sync for device {DeviceId}", device.Id);
+                var syncResult = await _whitelistSyncService.ProcessWhitelistSync(device.Id);
+                Log.Information("Whitelist sync result for device {DeviceId}: {Result}", device.Id, syncResult);
             }
 
             // Check for pending commands

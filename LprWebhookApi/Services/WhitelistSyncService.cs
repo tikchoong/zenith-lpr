@@ -22,15 +22,28 @@ public class WhitelistSyncService
     /// </summary>
     public async Task<bool> ProcessWhitelistSync(int deviceId)
     {
+        Log.Information("ProcessWhitelistSync called for device {DeviceId}", deviceId);
+
         var device = await _context.Devices.FindAsync(deviceId);
-        if (device == null || !device.WhitelistStartSync)
+        if (device == null)
         {
+            Log.Warning("Device {DeviceId} not found", deviceId);
+            return false;
+        }
+
+        Log.Information("Device {DeviceId} found. WhitelistStartSync: {WhitelistStartSync}, Status: {Status}",
+            deviceId, device.WhitelistStartSync, device.WhitelistSyncStatus);
+
+        if (!device.WhitelistStartSync)
+        {
+            Log.Information("Whitelist sync disabled for device {DeviceId}", deviceId);
             return false;
         }
 
         // Check for timeout
         if (await IsWhitelistSyncTimedOut(device))
         {
+            Log.Warning("Whitelist sync timed out for device {DeviceId}", deviceId);
             await MarkSyncAsFailed(device, "Sync timed out");
             return false;
         }
@@ -43,6 +56,7 @@ public class WhitelistSyncService
         }
 
         // Start new sync
+        Log.Information("Starting whitelist sync for device {DeviceId}", deviceId);
         await StartWhitelistSync(device);
         return true;
     }
