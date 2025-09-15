@@ -67,6 +67,17 @@ public class Device
     [Column("whitelist_sync_status")]
     public string? WhitelistSyncStatus { get; set; } // "idle", "clearing", "adding", "completed", "failed"
 
+    // Screenshot Capture Properties
+    [Column("capture_screenshot_enabled")]
+    public bool CaptureScreenshotEnabled { get; set; } = false;
+
+    [MaxLength(20)]
+    [Column("screenshot_capture_status")]
+    public string? ScreenshotCaptureStatus { get; set; }
+
+    [Column("last_screenshot_request")]
+    public DateTime? LastScreenshotRequest { get; set; }
+
     // Navigation properties
     [ForeignKey("SiteId")]
     public virtual Site Site { get; set; } = null!;
@@ -79,4 +90,5 @@ public class Device
     public virtual ICollection<CommandQueue> CommandQueue { get; set; } = new List<CommandQueue>();
     public virtual ICollection<EntryLog> EntryLogs { get; set; } = new List<EntryLog>();
     public virtual ICollection<Whitelist> Whitelists { get; set; } = new List<Whitelist>();
+    public virtual ICollection<PlateRecognitionScreenshot> PlateRecognitionScreenshots { get; set; } = new List<PlateRecognitionScreenshot>();
 }

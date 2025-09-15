@@ -16,16 +16,18 @@ public class LprWebhookController : ControllerBase
 {
     private readonly LprDbContext _context;
     private readonly WhitelistSyncService _whitelistSyncService;
+    private readonly IScreenshotService _screenshotService;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public LprWebhookController(LprDbContext context, WhitelistSyncService whitelistSyncService)
+    public LprWebhookController(LprDbContext context, WhitelistSyncService whitelistSyncService, IScreenshotService screenshotService)
     {
         _context = context;
         _whitelistSyncService = whitelistSyncService;
+        _screenshotService = screenshotService;
     }
 
     [HttpPost("plate-recognition")]
@@ -65,8 +67,20 @@ public class LprWebhookController : ControllerBase
             // Process whitelist sync if needed
             await _whitelistSyncService.ProcessWhitelistSync(device.Id);
 
+            Log.Information("About to call ProcessPlateRecognition for plate recognition {PlateRecognitionId}", plateResult.Id);
+
             // Process whitelist and create entry log
             var (entryLog, whitelistEntry) = await ProcessPlateRecognition(site.Id, device.Id, plateResult);
+
+            Log.Information("ProcessPlateRecognition completed for plate recognition {PlateRecognitionId}", plateResult.Id);
+            Log.Information("About to process screenshot for plate recognition {PlateRecognitionId}", plateResult.Id);
+
+            // Save screenshot if image data is present in the plate recognition request
+            await ProcessScreenshotFromPlateRecognition(site.Id, device.IpAddress?.ToString() ?? "", plateResult);
+
+            Log.Information("Screenshot processing completed for plate recognition {PlateRecognitionId}", plateResult.Id);
+
+
 
             // Build response
             var response = await BuildPlateRecognitionResponse(plateResult, entryLog, whitelistEntry, device.Id);
@@ -368,7 +382,7 @@ public class LprWebhookController : ControllerBase
     }
 
     [HttpPost("screenshot")]
-    public async Task<IActionResult> Screenshot(string siteCode, [FromBody] ScreenshotRequest request)
+    public async Task<IActionResult> Screenshot(string siteCode, [FromBody] ScreenshotCaptureRequest request)
     {
         var startTime = DateTime.UtcNow;
 
@@ -386,32 +400,17 @@ public class LprWebhookController : ControllerBase
                 return NotFound($"Site '{siteCode}' not found");
             }
 
-            // Find device by IP address
-            var device = await _context.Devices
-                .FirstOrDefaultAsync(d => d.SiteId == site.Id && d.IpAddress != null && d.IpAddress.ToString() == request.IpAddress);
+            // Save screenshot using service
+            var success = await _screenshotService.SaveScreenshotAsync(site.Id, request.IpAddress, request);
 
-            if (device != null)
+            var response = new
             {
-                // Save screenshot
-                var screenshot = new Screenshot
-                {
-                    SiteId = site.Id,
-                    DeviceId = device.Id,
-                    ImageBase64 = request.TriggerImage.ImageFile,
-                    ImageLength = request.TriggerImage.ImageFileLen,
-                    TriggerSource = "webhook",
-                    CapturedAt = DateTime.UtcNow
-                };
-
-                _context.Screenshots.Add(screenshot);
-                await _context.SaveChangesAsync();
-            }
-
-            // Simple acknowledgment response
-            var response = new { status = "ok", message = "Screenshot received" };
+                status = success ? "ok" : "error",
+                message = success ? "Screenshot saved" : "Failed to save screenshot"
+            };
 
             // Save response log
-            await SaveResponseLog(site.Id, device?.Id, "screenshot", request, response, startTime);
+            await SaveResponseLog(site.Id, null, "screenshot", request, response, startTime);
 
             Log.Information("=== End of LPR Screenshot Request ===");
 
@@ -839,6 +838,52 @@ public class LprWebhookController : ControllerBase
         catch (Exception ex)
         {
             Log.Warning(ex, "Failed to save response log for {RequestType}", requestType);
+        }
+    }
+
+    private async Task ProcessScreenshotFromPlateRecognition(int siteId, string deviceIp, PlateRecognitionResult plateResult)
+    {
+        try
+        {
+            Log.Information("Processing screenshot from plate recognition {PlateRecognitionId}. ImageFragmentBase64: {HasImage}, ImageFragmentLength: {Length}",
+                plateResult.Id, !string.IsNullOrEmpty(plateResult.ImageFragmentBase64), plateResult.ImageFragmentLength);
+
+            // Check if there's image data in the plate result
+            if (!string.IsNullOrEmpty(plateResult.ImageFragmentBase64) && plateResult.ImageFragmentLength > 0)
+            {
+                // Create a screenshot request from the plate recognition data
+                var screenshotRequest = new ScreenshotCaptureRequest
+                {
+                    IpAddress = deviceIp,
+                    PlateRecognitionId = plateResult.Id,
+                    TriggerImage = new ScreenshotImageData
+                    {
+                        ImageFile = plateResult.ImageFragmentBase64,
+                        ImageFileLen = plateResult.ImageFragmentLength.Value
+                    }
+                };
+
+                // Save the screenshot
+                var success = await _screenshotService.SaveScreenshotAsync(siteId, deviceIp, screenshotRequest);
+
+                if (success)
+                {
+                    Log.Information("Screenshot saved from plate recognition {PlateRecognitionId}, image length {ImageLength}",
+                        plateResult.Id, plateResult.ImageFragmentLength);
+                }
+                else
+                {
+                    Log.Warning("Failed to save screenshot from plate recognition {PlateRecognitionId}", plateResult.Id);
+                }
+            }
+            else
+            {
+                Log.Information("No image data in plate recognition {PlateRecognitionId}", plateResult.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error processing screenshot from plate recognition {PlateRecognitionId}", plateResult.Id);
         }
     }
 }

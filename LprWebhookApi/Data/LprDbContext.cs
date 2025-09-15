@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using LprWebhookApi.Models.Entities;
+using LprWebhookApi.Models;
 using System.Net;
 
 namespace LprWebhookApi.Data;
@@ -27,6 +28,7 @@ public class LprDbContext : DbContext
     public DbSet<ResponseLog> ResponseLogs { get; set; }
     public DbSet<SiteConfiguration> SiteConfigurations { get; set; }
     public DbSet<LookupTable> LookupTables { get; set; }
+    public DbSet<PlateRecognitionScreenshot> PlateRecognitionScreenshots { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -303,6 +305,17 @@ public class LprDbContext : DbContext
             .WithMany(e => e.UpdatedConfigurations)
             .HasForeignKey(e => e.UpdatedBy)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure PlateRecognitionScreenshot
+        modelBuilder.Entity<PlateRecognitionScreenshot>(entity =>
+        {
+            entity.HasIndex(e => e.PlateRecognitionId);
+            entity.HasIndex(e => e.DeviceId);
+            entity.HasIndex(e => e.LicensePlate);
+            entity.HasIndex(e => e.RecognitionResult);
+            entity.HasIndex(e => e.ScreenshotStatus);
+            entity.HasIndex(e => e.CreatedAt);
+        });
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)

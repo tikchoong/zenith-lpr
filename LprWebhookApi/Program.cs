@@ -31,12 +31,12 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Kestrel to listen on all IP addresses (HTTP only for development)
+// Configure Kestrel to listen on specific IP address (HTTP only for development)
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(5174); // HTTP only
+    options.Listen(System.Net.IPAddress.Parse("192.168.1.1"), 5174); // HTTP only on 192.168.1.1
     // Disable HTTPS for development to avoid certificate issues
-    // options.ListenAnyIP(7214, listenOptions =>
+    // options.Listen(System.Net.IPAddress.Parse("192.168.1.1"), 7214, listenOptions =>
     // {
     //     listenOptions.UseHttps(); // HTTPS
     // });
@@ -51,6 +51,7 @@ builder.Services.AddDbContext<LprDbContext>(options =>
 
 // Add services
 builder.Services.AddScoped<WhitelistSyncService>();
+builder.Services.AddScoped<IScreenshotService, ScreenshotService>();
 
 // Add CORS services
 builder.Services.AddCors(options =>
