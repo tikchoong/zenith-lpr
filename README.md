@@ -85,6 +85,195 @@ The screenshot capture system automatically captures and stores images when lice
 - `camera_ip`: Source device IP
 - `trigger_source`: Capture trigger type
 
+## Gate Control System
+
+### Overview
+
+The gate control system automatically manages entry/exit gates based on license plate recognition results, providing real-time access control with immediate response to LPR cameras.
+
+### Gate Control Process Flow
+
+```
+1. License Plate Recognized → Whitelist Check → Entry Decision
+2. Entry Decision Made → Gate Control Response
+3. Response Sent to Camera → Gate Opens/Remains Closed
+4. Entry Log Created → Audit Trail Maintained
+```
+
+### Entry Decision Logic
+
+**Whitelist Match Found:**
+
+- ✅ **Allowed**: `entryStatus = "allowed"`, `gateOpened = true`
+- ❌ **Blacklist**: `entryStatus = "allowed"`, `gateOpened = false` (if `IsBlacklist = true`)
+- 📊 **Entry Count**: Increments `CurrentEntries` for tracking
+
+**No Whitelist Match:**
+
+- ❌ **Denied**: `entryStatus = "denied"`, `gateOpened = false`
+
+### Response Format to Camera
+
+**Gate Open Response:**
+
+```json
+{
+  "Response_AlarmInfoPlate": {
+    "info": "ok", // Gate opens
+    "plateId": 12345,
+    "channelNum": 0
+  }
+}
+```
+
+**Gate Deny Response:**
+
+```json
+{
+  "Response_AlarmInfoPlate": {
+    "info": "denied", // Gate remains closed
+    "plateId": 12345,
+    "channelNum": 0
+  }
+}
+```
+
+### Entry Log Database Record
+
+Each recognition creates an audit trail:
+
+- **License Plate**: Recognized plate number
+- **Entry Status**: "allowed" or "denied"
+- **Entry Type**: "tenant", "visitor", "staff", "unknown"
+- **Gate Opened**: Boolean flag for actual gate action
+- **Confidence**: Recognition confidence score
+- **Whitelist Reference**: Link to matching whitelist entry (if any)
+- **Timestamps**: Entry time and processing time
+
+## Device Heartbeat & Online Status Tracking
+
+### Overview
+
+The heartbeat system monitors device connectivity and health, ensuring real-time status tracking and automatic offline detection.
+
+### Heartbeat Types
+
+**1. Normal Heartbeat (`/heartbeat`):**
+
+- Periodic device status updates
+- Includes device credentials and channel info
+- Updates `IsOnline = true` and `LastHeartbeat` timestamp
+
+**2. Comet Polling (`/comet-poll`):**
+
+- Continuous communication for command retrieval
+- Long-polling mechanism for real-time commands
+- Same status updates as normal heartbeat
+
+### Device Status Tracking
+
+**Online Status Determination:**
+
+- **Online**: Recent heartbeat within expected interval
+- **Offline**: No heartbeat for extended period
+- **Uptime Calculation**: `DateTime.UtcNow - LastHeartbeat`
+
+**Status Information Tracked:**
+
+- `IsOnline`: Boolean online/offline status
+- `LastHeartbeat`: UTC timestamp of last communication
+- `FirmwareVersion`: Device firmware information
+- `UptimeMinutes`: Calculated uptime duration
+
+### Heartbeat Database Records
+
+**device_heartbeats table:**
+
+- `site_id`, `device_id`: Multi-tenant device identification
+- `heartbeat_type`: "normal" or "comet"
+- `user_name`, `password`: Device authentication credentials
+- `channel_num`: Device channel information
+- `received_at`: Server timestamp of heartbeat receipt
+
+## Command Queue System
+
+### Overview
+
+The command queue system enables server-to-device communication through heartbeat and comet polling responses, supporting various device operations.
+
+### Command Types Supported
+
+**1. Gate Control Commands:**
+
+```json
+{
+  "command_type": "gate_open",
+  "command_data": {},
+  "priority": 1
+}
+```
+
+**2. Whitelist Synchronization:**
+
+```json
+{
+  "command_type": "whitelist_clear",
+  "command_data": { "plate": "" },
+  "priority": 1
+}
+```
+
+```json
+{
+  "command_type": "whitelist_add_batch",
+  "command_data": {
+    "whitelist_data": [
+      {
+        "plate": "ABC123",
+        "enable": 1,
+        "need_alarm": 0,
+        "enable_time": "2025-09-15 00:00:00",
+        "overdue_time": "2025-12-31 23:59:59"
+      }
+    ]
+  },
+  "priority": 1
+}
+```
+
+**3. Screenshot Capture:**
+
+```json
+{
+  "command_type": "screenshot",
+  "command_data": {
+    "port": 80,
+    "url": "http://192.168.1.1:5174/api/lpr/sites/site1/webhook/screenshot"
+  },
+  "priority": 1
+}
+```
+
+**4. Manual Trigger:**
+
+```json
+{
+  "command_type": "manual_trigger",
+  "command_data": {},
+  "priority": 1
+}
+```
+
+### Command Processing Flow
+
+```
+1. Command Queued → Database storage with priority
+2. Device Heartbeat/Poll → Server checks pending commands
+3. Commands Retrieved → Up to 5 commands per response
+4. Response Sent → Commands included in heartbeat response
+5. Commands Marked → `is_processed = true`, `processed_at = timestamp`
+```
+
 ## Whitelist Synchronization System
 
 ### Overview
@@ -103,6 +292,67 @@ The whitelist sync system ensures LPR cameras maintain synchronized whitelist da
 7. When complete → Status = "completed", flag = false
 ```
 
+### Whitelist Operations
+
+**1. Clear All Whitelist Entries:**
+
+```json
+{
+  "Response_AlarmInfoPlate": {
+    "white_list_operate": {
+      "operate_type": 1,
+      "white_list_data": [
+        {
+          "plate": "" // Empty plate clears all entries
+        }
+      ]
+    }
+  }
+}
+```
+
+**2. Add Batch of 5 Entries:**
+
+```json
+{
+  "Response_AlarmInfoPlate": {
+    "white_list_operate": {
+      "operate_type": 0,
+      "white_list_data": [
+        {
+          "plate": "ABC123",
+          "enable": 1,
+          "need_alarm": 0,
+          "enable_time": "2025-09-15 00:00:00",
+          "overdue_time": "2025-12-31 23:59:59"
+        },
+        {
+          "plate": "DEF456",
+          "enable": 1,
+          "need_alarm": 0,
+          "enable_time": "2025-09-15 00:00:00",
+          "overdue_time": "2025-12-31 23:59:59"
+        }
+        // ... up to 5 entries per batch
+      ]
+    }
+  }
+}
+```
+
+**3. Remove Specific Entries:**
+
+```json
+{
+  "Response_AlarmInfoPlate": {
+    "white_list_operate": {
+      "operate_type": 1,
+      "white_list_data": [{ "plate": "ABC123" }, { "plate": "DEF456" }]
+    }
+  }
+}
+```
+
 ### Sync States
 
 - **idle**: No sync in progress
@@ -110,6 +360,203 @@ The whitelist sync system ensures LPR cameras maintain synchronized whitelist da
 - **adding**: Adding new whitelist entries in batches
 - **completed**: Sync successfully completed
 - **failed**: Sync failed or timed out
+
+### Batch Processing Details
+
+- **Batch Size**: 5 entries per batch (configurable)
+- **Processing Order**: Priority-based command queue
+- **Progress Tracking**: `batches_sent / total_batches`
+- **Error Handling**: Automatic retry and failure detection
+- **Completion**: All batches sent and acknowledged
+
+## RS485 Serial Data Communication
+
+### Overview
+
+The RS485 serial communication system enables bidirectional data exchange between LPR cameras and external devices (access control panels, gate controllers, etc.).
+
+### Serial Data Endpoint
+
+**Webhook URL:** `POST /api/lpr/sites/{siteCode}/webhook/serial-data`
+
+### Request Format
+
+```json
+{
+  "SerialData": {
+    "channel": 0,
+    "serialno": "cead13eb-1a198cd7",
+    "ipaddr": "192.168.1.100",
+    "deviceName": "IVS",
+    "serialChannel": 0,
+    "data": "Y2guY29tFw==",
+    "dataLen": 7
+  }
+}
+```
+
+### Field Descriptions
+
+- **channel**: Camera channel number (currently 0)
+- **serialno**: Device serial number for identification
+- **ipaddr**: Device IP address
+- **deviceName**: Device name/model
+- **serialChannel**: Serial port channel (0 = RS485, 1 = RS232)
+- **data**: Base64-encoded serial data
+- **dataLen**: Actual length of serial data in bytes
+
+### Serial Data Processing
+
+**1. Data Reception:**
+
+- Validates device and site information
+- Decodes Base64 serial data
+- Stores in `serial_data_logs` table
+
+**2. Database Storage:**
+
+```sql
+CREATE TABLE serial_data_logs (
+    id SERIAL PRIMARY KEY,
+    site_id INTEGER NOT NULL,
+    device_id INTEGER NOT NULL,
+    serial_channel INTEGER,
+    data_base64 TEXT,
+    data_length INTEGER,
+    received_at TIMESTAMP WITH TIME ZONE
+);
+```
+
+**3. Response:**
+
+```json
+{
+  "status": "ok",
+  "message": "Serial data received"
+}
+```
+
+### Use Cases
+
+**Access Control Integration:**
+
+- Gate controller commands
+- Card reader data
+- Sensor status updates
+- Emergency override signals
+
+**External System Communication:**
+
+- Building management systems
+- Security panels
+- Parking management
+- Visitor management systems
+
+### Serial Channel Configuration
+
+- **Channel 0 (RS485)**: Multi-drop communication bus
+- **Channel 1 (RS232/RS485)**: Point-to-point or jumper-configured
+- **Baud Rate**: Configurable on device
+- **Data Format**: 8N1 (8 data bits, no parity, 1 stop bit)
+
+## Complete System Workflow
+
+### License Plate Recognition Flow
+
+```
+1. 📷 Camera detects vehicle → License plate recognized
+2. 📡 HTTP POST to /webhook/plate-recognition → Server receives data
+3. 🔍 Whitelist lookup → Check if plate is authorized
+4. ⚖️ Entry decision → Allow/Deny based on whitelist status
+5. 🚪 Gate control → Send "ok" or "denied" response
+6. 📊 Audit logging → Create entry log with full details
+7. 📸 Screenshot capture → Save image if enabled
+8. 📋 Command processing → Include any pending commands in response
+```
+
+### Device Communication Cycle
+
+```
+1. 💓 Heartbeat/Comet Poll → Device contacts server periodically
+2. 🔄 Status update → Update device online status and timestamp
+3. 📋 Command check → Server checks for pending commands
+4. 📤 Command delivery → Include commands in response
+5. ✅ Command execution → Device processes commands
+6. 🔁 Repeat cycle → Continuous communication loop
+```
+
+### Whitelist Synchronization Workflow
+
+```
+1. 👨‍💼 Admin triggers sync → Set WhitelistStartSync = true
+2. 📡 Next device communication → Heartbeat or plate recognition
+3. 🧹 Clear phase → Send "whitelist_clear" command
+4. 📦 Batch phase → Send batches of 5 entries each
+5. 📊 Progress tracking → Monitor batches_sent / total_batches
+6. ✅ Completion → Mark sync as completed
+```
+
+### Screenshot Capture Workflow
+
+```
+1. 📷 Plate recognition → Check if screenshot enabled for device
+2. 📸 Image extraction → Extract Base64 image from recognition data
+3. 💾 Database storage → Save screenshot with metadata
+4. 🔗 Linking → Associate with plate recognition and entry log
+5. 🌐 API access → Screenshots available via REST endpoints
+```
+
+### Command Queue Processing
+
+```
+1. 📋 Command creation → Admin/system creates command
+2. 🗃️ Queue storage → Store in command_queue table with priority
+3. 📡 Device communication → Heartbeat or comet poll
+4. 📤 Command retrieval → Get up to 5 pending commands
+5. 📨 Response inclusion → Add commands to response JSON
+6. ✅ Mark processed → Update is_processed = true
+```
+
+### Real-World Usage Examples
+
+**Example 1: Tenant Entry**
+
+```
+1. Tenant arrives → License plate "ABC123" recognized
+2. Whitelist check → Found in tenant whitelist
+3. Gate opens → Response: {"info": "ok"}
+4. Entry logged → Status: "allowed", Type: "tenant"
+5. Screenshot saved → Image stored with metadata
+```
+
+**Example 2: Visitor Entry**
+
+```
+1. Visitor arrives → License plate "XYZ789" recognized
+2. Whitelist check → Not found in any whitelist
+3. Gate denied → Response: {"info": "denied"}
+4. Entry logged → Status: "denied", Type: "unknown"
+5. Screenshot saved → Evidence of denied entry
+```
+
+**Example 3: Whitelist Update**
+
+```
+1. Admin adds new tenant → Creates whitelist entry
+2. Triggers sync → WhitelistStartSync = true
+3. Next heartbeat → Device receives clear command
+4. Batch processing → Device receives new entries
+5. Sync complete → Device whitelist updated
+```
+
+**Example 4: Emergency Gate Open**
+
+```
+1. Security override → Admin queues "gate_open" command
+2. Next communication → Command included in response
+3. Gate opens → Regardless of plate recognition
+4. Command processed → Marked as completed
+```
 
 ## Getting Started
 
